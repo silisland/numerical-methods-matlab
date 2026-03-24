@@ -1,63 +1,27 @@
-function [a] = gauss_elimination_pp(a, b)
-    % Gaussian Elimination with Partial Pivoting.
-    %
-    % Calculate the upper triangular matrix from linear system Ax=b (make a row
-    % reduction).
-    %
-    % Args:
-    %     a: matrix A from system Ax=b.
-    %     b: an array containing b values.
-    %
-    % Returns:
-    %     a: augmented upper triangular matrix.
+for k = 1:n-1
+    % 1. 选主元：找到第 k 列中，从第 k 行开始绝对值最大的元素索引
+    [~, max_idx] = max(abs(U_aug(k:n, k)));
+    max_idx = max_idx + k - 1; % 转换为全局索引
 
-    [n, m] = size(a);
-
-    if n ~= m
-        error('Error: "a" must be a square matrix.')
+    % 2. 检查奇异性
+    if abs(U_aug(max_idx, k)) < 1e-12
+        warning('矩阵接近奇异，可能无唯一解。');
+        continue; 
     end
 
-    a = [a, b]; % Produces the augmented matrix
-
-    % Elimination process starts
-    for i = 1:(n - 1)
-        p = i;
-
-        % Comparison to select the pivot
-        for j = (i + 1):n
-
-            if abs(a(j, i)) > abs(a(i, i))
-                % Swap rows
-                a([i j], :) = a([j i], :);
-            end
-
-        end
-
-        % Checking for nullity of the pivots
-        while p <= n && a(p, i) == 0
-            p = p + 1;
-        end
-
-        if p == n + 1
-            warning('Info: No unique solution.');
-        else
-
-            if p ~= i
-                % Swap rows
-                a([i p], :) = a([p i], :);
-            end
-
-        end
-
-        for j = (i + 1):n
-            a(j, :) = a(j, :) - a(i, :) * (a(j, i) / a(i, i));
-        end
-
+    % 3. 交换行 (如果需要)
+    if max_idx ~= k
+        U_aug([k, max_idx], :) = U_aug([max_idx, k], :);
     end
 
-    % Checking for nonzero of last entry
-    if a(n, n) == 0
-        warning('Info: No unique solution.');
+    % 4. 消元 (向量化操作)
+    for i = k+1:n
+        factor = U_aug(i, k) / U_aug(k, k);
+        U_aug(i, k:end) = U_aug(i, k:end) - factor * U_aug(k, k:end);
     end
+end
 
+% 检查最后一个主元
+if abs(U_aug(n, n)) < 1e-12
+    warning('最后一个主元为零，无唯一解。');
 end
